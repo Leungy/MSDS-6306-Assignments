@@ -16,7 +16,7 @@ library(fivethirtyeight)
 ```
 
 ##Question 1 GitHub Cloning 
-```{r question-1, echo=FALSE}
+```{r question-1}
 #C:\Users\Yat>git clone --bare https://github.com/caesar0301/awesome-public-datasets
 #C:\Users\Yat>cd awesome-public-datasets.git
 #C:\Users\Yat\awesome-public-datasets.git>git push --mirror https://github.com/Leungy/awesome-public-datasets.git
@@ -29,7 +29,7 @@ library(fivethirtyeight)
 ##Question 2 Data Summary 
 ####extract titanic.csv.zip
 
-```{r question-2, echo=True}
+```{r question-2}
 #2A read in titanic.csv 
 df<-read.csv(file="C:/Users/Yat/Documents/MSDS/MSDS 6306 Doing Data Science/Unit 3/titanic.csv")
 
@@ -57,7 +57,7 @@ means.df
 ```
 
 #Question 3 Function Building
-```{r Question-3, echo=True}
+```{r Question-3}
 #Load sleep_data_01.csv 
 Sleep.df<-read.csv(file="C:/Users/Yat/Documents/MSDS/MSDS 6306 Doing Data Science/Unit 3/sleep_data_01.csv")
 #3A 
@@ -136,7 +136,7 @@ report(Column.Names2,rounding.function(Column.Values))
 
 #Question 4	FiveThirtyEight Data 
 #https://github.com/rudeboybert/fivethirtyeight
-```{r question-4, echo=True}
+```{r question-4}
 #college_recent_grads 
 #4A Install the package
 #library(fivethirtyeight, package installed and library referenced in the beginning of the markdown
@@ -152,7 +152,7 @@ str(df)
 ```
 
 #Question 5 Data Summary 
-```{r Question-5, echo=True}
+```{r Question-5}
 #5A R command that gives you the column names of the data frame
 #number of rows
 NCOL(df)
@@ -175,5 +175,5 @@ write.csv(df,"C:/Users/Yat/Documents/MSDS/MSDS 6306 Doing Data Science/Unit 3/fi
 #Question 6 Codebook
 ```{r question-6}
 #link to Github Repo for HW3 
-#https://github.com/Leungy
+#https://github.com/Leungy/MSDS-6306-Assignments/tree/master/Assignment%203
 ```
