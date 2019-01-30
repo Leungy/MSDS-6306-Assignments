@@ -145,9 +145,9 @@ report(Column.Names2,rounding.function(Column.Values))
 df<-fivethirtyeight::college_recent_grads 
 
 #4C Use a more detailed list of the data sets to write out the URL in a comment to the related news story
+vignette("fivethirtyeight")
 
 #4D Dimensions and column names of this data frame
-
 str(df)
 ```
 
