@@ -1,0 +1,179 @@
+---
+title: "Assignment 3"
+author: "yleung"
+date: "January 28, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-packages, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(fivethirtyeight)
+```
+
+##Question 1 GitHub Cloning 
+```{r question-1, echo=FALSE}
+#C:\Users\Yat>git clone --bare https://github.com/caesar0301/awesome-public-datasets
+#C:\Users\Yat>cd awesome-public-datasets.git
+#C:\Users\Yat\awesome-public-datasets.git>git push --mirror https://github.com/Leungy/awesome-public-datasets.git
+#C:\Users\Yat\awesome-public-datasets.git>cd..
+#C:\Users\Yat>rmdir /s /q awesome-public-datasets.git
+
+```
+
+
+##Question 2 Data Summary 
+####extract titanic.csv.zip
+
+```{r question-2, echo=True}
+#2A read in titanic.csv 
+df<-read.csv(file="C:/Users/Yat/Documents/MSDS/MSDS 6306 Doing Data Science/Unit 3/titanic.csv")
+
+#2B Frequency of Male:Female Passengers
+#store male and female passenger counts
+df.freq<-df%>%group_by(Sex)%>%summarise(counts=n())
+#output the gender count
+df.freq
+#plot passenger gender frequency
+ggplot(df.freq, aes(x=Sex,y=counts)) + geom_bar(fill = "#0073C2FF",stat = "identity")+ ggtitle("Passenger count by gender")
+
+#2C apply() function
+#output means of Age, Fare and Survival
+age.mean<-lapply(df["Age"],mean,na.rm=TRUE)
+fare.mean<-lapply(df["Fare"],mean,na.rm=TRUE)
+Survival.mean<-lapply(df["Survived"],mean,na.rm=TRUE)
+survived.passengers<-df%>%select(Survived)%>%filter(Survived==1)
+survived.count<-count(survived.passengers)
+survived.percentage<-survived.count/length(df$Survived)*100
+
+means.names<-c("Mean Age","Mean Fare","Mean Survival","Percent Survival")
+means.out<-c(age.mean,fare.mean,Survival.mean,survived.percentage)
+means.df<-rbind(means.names,means.out)
+means.df
+```
+
+#Question 3 Function Building
+```{r Question-3, echo=True}
+#Load sleep_data_01.csv 
+Sleep.df<-read.csv(file="C:/Users/Yat/Documents/MSDS/MSDS 6306 Doing Data Science/Unit 3/sleep_data_01.csv")
+#3A 
+# Create objects for the median Age, the minimum and maximum Duration of sleep, and the mean and standard deviation of the Rosenberg Self Esteem scale (RSES)
+median.function<-function(Input1){
+
+#Parse data from Input1 into median() function
+  median.output<-median(Input1,na.rm=TRUE)
+  return(median.output)
+}
+
+Max.Function<-function(Input2){
+  maximum.output<-max(Input2,na.rm=TRUE)
+  return(maximum.output)
+}
+
+Min.Function<-function(Input3){
+  minimum.output<-min(Input3,na.rm=TRUE)
+  return(minimum.output)
+}
+
+mean.function<-function(Input4){
+  mean.output<-mean(Input4,na.rm=TRUE)
+  return(mean.output)   
+
+}
+#Parse data from Input3 into mean() and sd() functions 
+stddev.function<-function(Input5){
+  stddev.output<-sd(Input5,na.rm=TRUE)
+  return(stddev.output)  
+  
+}
+
+
+median.function(Sleep.df$Age)
+Max.Function(Sleep.df$Duration)
+Min.Function(Sleep.df$Duration)
+mean.function(Sleep.df$RSES)
+stddev.function(Sleep.df$RSES)
+
+#3B
+# Create a data.frame object called report consists of the median age, the RSES mean and standard deviation respectively divided by five and the range of Duration (Max-Min)
+Column.Names<-c("Median Age","Mean RSES","Std.Deviation RSES","Range of Duration")
+Column.Values<-c(median.function(Sleep.df$Age),mean.function(Sleep.df$RSES),stddev.function(Sleep.df$RSES)/5,Max.Function(Sleep.df$Duration)-Min.Function(Sleep.df$Duration))
+
+report<-function(Names,Values){
+  report.df<-cbind(Names,Values)
+  return(report.df)
+  
+}
+report(Column.Names,Column.Values)
+
+
+#3C Change the column names of this data.frame to MedianAge, SelfEsteem, SE_SD, and DurationRange
+Column.Names2<-c("MedianAge","SelfEsteem","SE_SD","DurationRange")
+
+report(Column.Names2,Column.Values)
+
+
+#3D Round the report to at most 2 digits: leave this as the closing line to the function
+rounding.function<-function(Var.List){
+  two.sigfig<-lapply(Var.List,round,2)
+  return(two.sigfig)
+}
+
+report(Column.Names2,rounding.function(Column.Values))
+
+#3E
+#Output of 3B
+report(Column.Names,Column.Values)
+#output of 3C
+report(Column.Names2,Column.Values)
+#output of 3D
+report(Column.Names2,rounding.function(Column.Values))
+```
+
+#Question 4	FiveThirtyEight Data 
+#https://github.com/rudeboybert/fivethirtyeight
+```{r question-4, echo=True}
+#college_recent_grads 
+#4A Install the package
+#library(fivethirtyeight, package installed and library referenced in the beginning of the markdown
+
+#4B Assign 22nd data set to df
+df<-fivethirtyeight::college_recent_grads 
+
+#4C Use a more detailed list of the data sets to write out the URL in a comment to the related news story
+
+#4D Dimensions and column names of this data frame
+
+str(df)
+```
+
+#Question 5 Data Summary 
+```{r Question-5, echo=True}
+#5A R command that gives you the column names of the data frame
+#number of rows
+NCOL(df)
+#Column Names
+names(df)
+
+#5B count of each unique major_category in the data frame
+count<-aggregate(data.frame(count=df$major_category),list(value=df$major_category),length)
+
+major_count<-data.frame(count)
+#5C Barplot of majot_count
+
+bar<-ggplot(major_count,aes(value,count))+geom_bar(stat = "identity")
+bar+theme(axis.text.x = element_text(angle=90))
+
+#5D Write the fivethirtyeight data to a csv file.  Make sure that it does not have row labels
+write.csv(df,"C:/Users/Yat/Documents/MSDS/MSDS 6306 Doing Data Science/Unit 3/fivethirtyeight-college-recent-grads.csv",row.names=FALSE)
+```
+
+#Question 6 Codebook
+```{r question-6}
+#link to Github Repo for HW3 
+#https://github.com/Leungy
+```
