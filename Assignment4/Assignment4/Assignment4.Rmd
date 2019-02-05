@@ -1,0 +1,35 @@
+---
+title: "Assignment4"
+author: "yleung"
+date: "February 4, 2019"
+output: html_document
+---
+
+## R Libraries
+```{r setup, include=FALSE}
+library(XML)
+library(dplyr)
+library(tidyr)
+library(stringi)
+library(rvest)
+library(ggplot2)
+library(RCurl)
+library(rvest)
+```
+
+## Question 1 Harry Potter Cast 
+####https://www.imdb.com/title/tt1201607/fullcredits?ref_=tt_ql_1
+
+```{r Q1Cast}
+HP_movie  <- read_html("https://www.imdb.com/title/tt1201607/fullcredits?ref_=tt_ql_1")
+
+cast<-HP_movie %>% html_nodes("table.cast_list a")%>% html_text()
+
+cast<-cast[cast!=""]
+cast<-noquote(cast)
+cast<-cast[!sapply(cast,is.null)]
+cast<-gsub("[\n]","",cast)
+cast<-gsub("(^[[:space:]]+|[[:space:]]+$)", "", cast)
+cast<-as.data.frame(cast)
+Cast.Name<-cast[seq(1,nrow(cast),2),]
+```
