@@ -6,22 +6,16 @@ output: html_document
 ---
 
 ## R Libraries
-```{r setup, include=FALSE}
-library(XML)
+```{r libraries, echo=FALSE}
 library(dplyr)
 library(tidyr)
-library(lattice)
 library(rvest)
 library(ggplot2)
 library(RCurl)
-library(rvest)
 library(stringr)
 library(stringi)
-
-library(datasets)
-library(nycflights13)
 ```
-
+####https://github.com/Leungy/MSDS-6306-Assignments/tree/master/Assignment%205
 ## 1.	Data Munging , yob2016.txt 
 
 ```{r Data-Munging}
