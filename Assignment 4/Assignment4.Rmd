@@ -1,0 +1,112 @@
+---
+title: "Assignment4_6303"
+author: "yleung"
+date: "February 4, 2019"
+output: html_document
+---
+
+## R Libraries
+```{r setup, include=FALSE}
+library(XML)
+library(dplyr)
+library(tidyr)
+library(lattice)
+library(rvest)
+library(ggplot2)
+library(RCurl)
+library(rvest)
+library(stringr)
+```
+
+#### Question 1 Harry Potter Cast 
+######https://www.imdb.com/title/tt1201607/fullcredits?ref_=tt_ql_1
+
+```{r Q1Cast}
+HP_movie  <- read_html("https://www.imdb.com/title/tt1201607/fullcredits?ref_=tt_ql_1")
+
+#Find Cast/Role table from the html parse then cast it into a table
+all.tables<-HP_movie %>%html_nodes("table.cast_list")
+raw.cast.tables<-html_table(all.tables, fill = TRUE)
+
+#make into df
+raw.tables<-as.data.frame(raw.cast.tables)
+
+#make a name df for all actors/actress
+Cast.Names<-as.data.frame(raw.tables$X2)
+colnames(Cast.Names)<-"Name"
+
+#make a role df for all actors/actress
+Roles<-as.data.frame(raw.tables$X4)
+colnames(Roles)<-"Role"
+
+#make a draft df to cbind the Roles and Cast.Names dfs
+Draft.df<-cbind(Cast.Names,Roles)
+#remove the empty 1st row
+Draft.df<-Draft.df[-c(1),]
+#remove Rest of cast listed alphabetically from df
+New.Draft.df<-Draft.df[-c(92),]
+
+#reindex df
+rownames(New.Draft.df) = 1:dim(New.Draft.df)[1]
+
+#remove newline character within string for all in the New.Draft.df$Role 
+New.Draft.df$Role <-sapply(New.Draft.df$Role, function(x) { gsub("[\r\n]+\\s+", "", x) })
+
+#Find last name of cast members
+#Not sure on composed last name more than 2 word
+#Last.Name<-sub(":", " ", sub(".* ", "", sub(" (Van|van) ", " \\5:", New.Draft.df$Name)))
+Last.Name<-sub(":", " ", sub(".* ", "", sub(" (De|de) ", " \\1:", New.Draft.df$Name)))
+Last.Name<-as.data.frame(Last.Name)
+
+
+First.Name<-sub("^(\\S+\\s).*", "\\1",New.Draft.df$Name)
+First.Name<-as.data.frame(First.Name)
+Cast<-cbind(First.Name,Last.Name)
+Role<-New.Draft.df$Role
+
+Movie.Cast.Role<-cbind(Cast,Role)
+
+head(Movie.Cast.Role,10)
+```
+
+####Question 2 ESPN Spurs
+######http://www.espn.com/nba/team/stats/_/name/sa/san-antonio-spurs
+```{r Q2-ESPN}
+#read the spurs' information off ESPN
+ESPN<-read_html("http://www.espn.com/nba/team/stats/_/name/sa/san-antonio-spurs")
+
+#look for all the html table tags
+spurs.stat<-ESPN%>%html_nodes("table")
+
+#find the spurs' data table 
+spurs.table<-html_table(spurs.stat, fill = TRUE)
+
+#get the necessary html tables
+Player.Names<-spurs.table[[6]]
+Shooting.Stats<-spurs.table[[8]]
+
+#binds the 2 tables together into 1
+ShootingStatTable<-cbind(Player.Names,Shooting.Stats)
+
+#Get the player's position then clean up the df header
+Position<-as.data.frame(word(ShootingStatTable$Name,-1))
+colnames(Position)<-"Player_Position"
+
+#Get the player's name then clean up the df header
+Player<-as.data.frame(word(ShootingStatTable$Name,1,2, sep = fixed(" ")))
+colnames(Player)<-"Player_Name"
+
+#binds the player name df and the position df into a single df
+Player.Position<-cbind(Player,Position)
+
+#Binds the player name, position, and the stat dfs into 1 df
+StatTable<-cbind(Player.Position,Shooting.Stats)
+
+#Final Stat Table for Spurs
+StatTable<-StatTable[-c(16),]
+
+#Field Goals Percentage Per Game 
+xyplot(StatTable$`FG%` ~ StatTable$Player_Name, group=StatTable$Player_Position, data=StatTable, xlab="Player Name",ylab="Field Goals Percentage(%)", auto.key=list(space="right"), jitter.x=TRUE, jitter.y=TRUE, scales=list(x=list(rot=45)))
+```
+
+
