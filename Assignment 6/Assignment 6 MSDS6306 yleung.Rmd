@@ -1,0 +1,83 @@
+---
+title: "Assignment 6 MSDS 6306-407"
+author: "yleung"
+date: "February 18, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Libraries
+```{r libraries, echo=FALSE}
+library(dplyr)
+library(tidyr)
+library(rvest)
+library(ggplot2)
+library(stringr)
+library(stringi)
+```
+
+## Load rda & csv files
+
+```{r mental-health}
+load("C:/Users/Yat/Documents/MSDS/MSDS 6306 Doing Data Science/Unit 6/N-MHSS-2015-DS0001-data-r.rda")
+
+State.Size <- read.csv("C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Unit 6\\statesize.csv", sep=",")
+```
+
+## Question 1
+
+```{r Question-1}
+#B. Get State Abbrevations
+State.Abbrev<-data.frame(unique(mh2015_puf$LST))
+
+#Count only the VAs within lower 48 states
+#Filter out states or territories that are not within the lower 48 states
+
+States<-mh2015_puf%>%select(LST,FACILITYTYPE)%>%filter(!mh2015_puf$LST%in%c("AK    ","HI    ","VI    ","PR    ","AS    ","GU    "))
+
+#C. Final filtering to get the VA centers and then count how many per state
+VA.Centers<-States%>%filter(as.integer(FACILITYTYPE)==6)%>%count(LST)
+data.frame(VA.Centers)
+
+
+#D. ggplot barplot 
+p<-ggplot(VA.Centers, aes(x=VA.Centers$LST, y=VA.Centers$n, color=VA.Centers$n)) + geom_bar(stat="identity", fill=rainbow(n=length(VA.Centers$LST)))
+p<-p+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p+ggtitle("VA Center Count by State, Lower 48 States in US") +
+  xlab("State") + ylab("Count(s)")+ theme(legend.position="none")
+```
+
+## Question 2
+
+```{r Question-2}
+#A. Paste() on LST 
+State.Size.VA.Centers<-merge(VA.Centers,State.Size, by.x="LST",by.y="Abbrev",sort=TRUE )
+paste(State.Size$Abbrev)
+paste(VA.Centers$LST)
+#The state abbreviation (VA.Centers$LST) from 1C had 4 spaces after each state abbreviation however there was no spaces in the State.Size$abbrev 
+
+#B. Correct and merge the state size and the VA.Centers df from 1C
+#Trim the trailing spaces from the VA.Centers$LST
+trim.trailing <- function (x) sub("\\s+$", "", x)
+VA.Centers$LST<-trim.trailing(VA.Centers$LST)
+paste(VA.Centers$LST)
+
+data.frame<-merge(VA.Centers,State.Size,by.x="LST",by.y="Abbrev")
+
+#C. Calculate VA/thousand sq miles
+data.frame<-data.frame%>%mutate(VAper1000SqMiles=data.frame$n/(data.frame$SqMiles/1000))
+
+#D. ggplot barplot using VAper1000SqMiles
+p<-ggplot(data.frame, aes(x=reorder(LST,-VAper1000SqMiles), y=VAper1000SqMiles, fill=Region)) + geom_bar(position="dodge", stat="identity")
+
+p<-p+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+p+ggtitle("VAs per square thousand miles in US excluding Alaska")+ xlab("State")+ ylab("VA / 1000 Sq Miles")+ theme()+ scale_fill_discrete(name="Region")
+
+#Rhode Island has the highest number of VAs per square thousand miles amd Montana has the lowest.  That was due to the state size, Montana is the 3rd largest state in the lower 48 US and has only 1 VA. Rhode Island is the smallest state and has 2 VAs.
+#The Majority of the states that has the most VAs per square thousand miles are those from the North-east region.
+#A bonferroni test comparing VAs per square thousand miles based on the geographical region.
+```
