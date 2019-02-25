@@ -1,0 +1,109 @@
+---
+title: "Case_Study_1_6306"
+author: "yleung"
+date: "February 23, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Libraries
+```{r libraries, echo=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(stringr)
+library(stringi)
+library(GGally)
+```
+
+## Import Files
+```{r Read-CSVs}
+beers <- read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Case Study 1\\Beers.csv', header=TRUE, sep=",")
+breweries<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Case Study 1\\Breweries.csv', header=TRUE, sep=",")
+```
+
+## Breweries Per State
+```{r Brew-per-State}
+#List the brewery counts per state and convert into data frame
+BreweryPerState<-table(breweries$State)
+data.frame(BreweryPerState)
+```
+
+## Merge Breweries and Beers by brewery id
+```{r Merge-beers-breweries}
+#Merge the beers and breweries data frames by the brewery id
+Brewery_Beer<-merge(beers, breweries,by.x = "Brewery_id", by.y = "Brew_ID")
+
+#Rename the Header of the Beer Name and Brewery Name after merging
+colnames(Brewery_Beer)[2]<-"Beer_Name"
+colnames(Brewery_Beer)[8]<-"Brewery_Name"
+
+#Print the first 6 rows of the Brewery_Beer data frame
+head(Brewery_Beer,6)
+```
+
+## Numbers of NA in each column
+```{r NA-Per-Column}
+#Count the number of times N/A appears in each column
+NaPerCol<-Brewery_Beer %>%
+  select(everything()) %>%  
+  summarise_all(funs(sum(is.na(.))))
+
+NaPerCol
+
+#Count the number of times non N/A appears in each column
+NonNaPerCol<-Brewery_Beer %>%
+  select(everything()) %>%  
+  summarise_all(funs(sum(!is.na(.))))
+
+NonNaPerCol
+
+#Percentage of time N/A appears in each column
+PercentageNAperCol<-NaPerCol/NonNaPerCol*100
+
+PercentageNAperCol
+```
+
+## Median Alcohol Content and IBU per state
+```{r Median-ABV-IBU}
+#Calculate ABV and IBU medians
+medianABV<-Brewery_Beer %>%  group_by(State) %>%  summarize(median_ABV = median(ABV, na.rm = TRUE))
+medianIBU<-Brewery_Beer %>%  group_by(State) %>%  summarize(median_IBU = median(IBU, na.rm = TRUE))
+
+#Plot median ABV 
+#reorder from highest to lowest
+ggplot(medianABV, aes(y=median_ABV, x=reorder(State,-median_ABV),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median ABV")
+
+#Plotmedian IBU
+#reorder from highest to lowest
+ggplot(medianIBU, aes(y=median_IBU, x=reorder(State,-median_IBU),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median IBU")
+```
+
+## State with highest ABV and highest IBU
+```{r Max-IBU-ABV}
+#Highest ABV
+Brewery_Beer %>%  slice(which.max(ABV))%>%select(State,ABV)
+#Highest IBU
+Brewery_Beer %>%  slice(which.max(IBU))%>%select(State,IBU)
+```
+
+## Summary Statistics of ABV
+```{r ABV-Stat-Summary}
+#Summary Statistics of ABV
+Brewery_Beer %>%select(ABV)%>%summary()
+
+```
+
+## IBU versus ABV relationship
+```{r IBU-vs-ABV}
+#Scatter plot of IBU on x and ABV on y with regression line
+ggplot(Brewery_Beer, aes(x=IBU, y=ABV))+geom_point()+geom_smooth(method="lm")
+
+#Correlation Matrix of IBU vs ABV
+AbvIBU<-Brewery_Beer[,c(4,5)]
+ggcorr(AbvIBU,palette = "RdBu", label = TRUE)
+```
+
