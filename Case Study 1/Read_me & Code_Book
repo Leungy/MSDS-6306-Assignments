@@ -1,0 +1,37 @@
+Folder for Case Study 1 MSDS6306 407 SPR 2019
+Case Study 1 for MSDS 6306 Using Beers and Breweries data sets
+
+Read_Me:
+Both sets are csv files, comma delimited. 
+Files parsed into R using read.csv(“filepath://folder_name//file_name.csv”)
+Data Sets are merged by the brewery_ID  in Beers,csv and Brew_ID in Vreweries.csv via merge(df.x, df.y, by.x=”specific column_name from df.x”, by.y=”specific column_name from df.y”)
+
+Code Book:
+Beers.csv:
+Name= Name of the beer.
+Beer_ID=Unique identifier of the beer.
+ABV= Alcohol by volume of the beer.
+IBU= International Bitterness Units of the beer.
+Brewery_ID= Brewery id associated with the beer.
+Style=Style of the beer.
+Ounces=Ounces of beer.
+
+Breweries.csv:
+Brew_ID= Unique identifier of the brewery.
+Name= Name of the brewery.
+City= City where the brewery is located.
+State= U.S. State where the brewery is located.
+
+Questions of Interest (QoIs):
+See Case Study 01.docx in Github Case Study 1 folder for the questions of interest.
+
+R Libraries:
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(stringr)
+library(stringi)
+library(GGally)
+
+Compiled on a x86_64 machine, Windows 10 Version 1803
+R version 3.5.2 (2018-12-20),”Eggshell Igloo"
