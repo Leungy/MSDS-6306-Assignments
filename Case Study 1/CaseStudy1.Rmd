@@ -29,7 +29,15 @@ breweries<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Dat
 ```{r Brew-per-State}
 #List the brewery counts per state and convert into data frame
 BreweryPerState<-table(breweries$State)
-data.frame(BreweryPerState)
+BreweryPerState<-data.frame(BreweryPerState)
+BreweryPerState
+
+#Rename the Header of BreweryPerState
+colnames(BreweryPerState)[1]<-"State"
+colnames(BreweryPerState)[2]<-"Brewery_Count"
+
+#Plot Brewery Count Per State
+ggplot(BreweryPerState, aes(y=Brewery_Count, x=reorder(State,-Brewery_Count),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Brewery_Count")+ggtitle("Brewery Count(s) By State")
 ```
 
 ## Merge Breweries and Beers by brewery id
@@ -75,11 +83,11 @@ medianIBU<-Brewery_Beer %>%  group_by(State) %>%  summarize(median_IBU = median(
 
 #Plot median ABV 
 #reorder from highest to lowest
-ggplot(medianABV, aes(y=median_ABV, x=reorder(State,-median_ABV),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median ABV")
+ggplot(medianABV, aes(y=median_ABV, x=reorder(State,-median_ABV),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median ABV")+ggtitle("Median ABV by State")
 
-#Plotmedian IBU
+#Plot median IBU
 #reorder from highest to lowest
-ggplot(medianIBU, aes(y=median_IBU, x=reorder(State,-median_IBU),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median IBU")
+ggplot(medianIBU, aes(y=median_IBU, x=reorder(State,-median_IBU),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median IBU")+ggtitle("Median IBU by State")
 ```
 
 ## State with highest ABV and highest IBU
@@ -100,10 +108,11 @@ Brewery_Beer %>%select(ABV)%>%summary()
 ## IBU versus ABV relationship
 ```{r IBU-vs-ABV}
 #Scatter plot of IBU on x and ABV on y with regression line
-ggplot(Brewery_Beer, aes(x=IBU, y=ABV))+geom_point()+geom_smooth(method="lm")
+ggplot(Brewery_Beer, aes(x=IBU, y=ABV))+geom_point()+geom_smooth(method="lm")+ggtitle("Scatter Plot, ABV versus IBU")
 
 #Correlation Matrix of IBU vs ABV
 AbvIBU<-Brewery_Beer[,c(4,5)]
-ggcorr(AbvIBU,palette = "RdBu", label = TRUE)
+p<-ggcorr(AbvIBU,palette = "RdBu", label = TRUE)
+p+ggtitle('Coefficient of Determination Matrix, R^2')
 ```
 
