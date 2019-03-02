@@ -2,7 +2,9 @@
 title: "Founders Brewing Co."
 author: "Y.Leung, K.Richardson"
 date: "February 23, 2019"
-output: html_document
+output:
+  html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -38,11 +40,13 @@ breweries<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Dat
 #List the brewery counts per state and convert into data frame
 BreweryPerState<-table(breweries$State)
 BreweryPerState<-data.frame(BreweryPerState)
-print(tbl_df(BreweryPerState),n=51)
-
 #Rename the Header of BreweryPerState
 colnames(BreweryPerState)[1]<-"State"
 colnames(BreweryPerState)[2]<-"Brewery_Count"
+#Arrange the State by brewery counts
+BreweryPerState<-arrange(BreweryPerState, desc(Brewery_Count))
+#Print the data frame as a table
+print(tbl_df(BreweryPerState),n=51)
 
 #Plot Brewery Count Per State
 ggplot(BreweryPerState, aes(y=Brewery_Count, x=reorder(State,-Brewery_Count),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Brewery_Count")+ggtitle("Brewery Count(s) By State")
@@ -68,7 +72,7 @@ print(tbl_df(Top6),n=NULL,width = Inf)
 NaPerCol<-Brewery_Beer %>%
   select(everything()) %>%  
   summarise_all(funs(sum(is.na(.))))
-
+#Print the NaPerCol data frame as a table
 print(tbl_df(NaPerCol),n=NULL,width = Inf)
 
 #Get total row counts, this is the same for all columns 
@@ -76,7 +80,7 @@ totalRowCount<-nrow(Brewery_Beer)
 
 #Percentage of time N/A appears in each column
 PercentageNAperCol<-NaPerCol/totalRowCount*100
-#Print the percent of NA per column
+#Print the percent of NA per column as a table
 print(tbl_df(PercentageNAperCol),n=NULL,width = Inf)
 
 #Summary Table of total NA counts and total Row counts per column
@@ -85,7 +89,7 @@ NaCountTable<-rbind(NaPerCol,totalRowCount)
 Variables<-c("N/A Counts","Total Counts")
 #Combine Variables and NaCountTable
 NaCountTable<-cbind(Variables,NaCountTable)
-#Print the NaCountTable data frame
+#Print the NaCountTable data frame as a table
 print(tbl_df(NaCountTable),n=NULL,width = Inf)
 ```
 
@@ -100,11 +104,11 @@ medianABV<-na.omit(medianABV)
 medianIBU<-na.omit(medianIBU)
 
 #Plot median ABV 
-#reorder from highest to lowest
+#Reorder from highest to lowest
 ggplot(medianABV, aes(y=median_ABV, x=reorder(State,-median_ABV),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median ABV")+ggtitle("Median ABV by State")
 
 #Plot median IBU
-#reorder from highest to lowest
+#Reorder from highest to lowest
 ggplot(medianIBU, aes(y=median_IBU, x=reorder(State,-median_IBU),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median IBU")+ggtitle("Median IBU by State")
 
 #Plot Top and Bottom 5 median ABV 
@@ -115,11 +119,11 @@ Top5ABV<-head(SortedMedABV,5)
 #Find the bottom 5 from the sortedMedABV df
 Bot5ABV<-tail(SortedMedABV,5)
 
-#(Side by side bar plots) for the Top and Bottom Median ABV
+#Top 5 Median ABV plot
 A<-ggplot(Top5ABV, aes(y=median_ABV, x=reorder(State,-median_ABV),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median ABV")+ggtitle("5 Highest Median ABV by State")+ ylim(0,0.07)
-
+#Bottom 5 Median ABV plot
 B<-ggplot(Bot5ABV, aes(y=median_ABV, x=reorder(State,-median_ABV),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median ABV")+ggtitle("5 Lowest Median ABV by State")+ ylim(0,0.07)
-
+#(Side by side bar plots) for the Top and Bottom Median ABV
 grid.arrange(A, B, nrow = 1)
 
 #Plot Top and Bottom 5 median IBU
@@ -130,20 +134,20 @@ Top5IBU<-head(SortedMedIBU,5)
 #Find the bottom 5 from the sortedMedIBU df, SD was removed 
 Bot5IBU<-tail(SortedMedIBU,5)
 
-#(Side by side bar plots) for the Top and Bottom Median IBU
+# Top 5 Median IBU plot
 C<-ggplot(Top5IBU, aes(y=median_IBU, x=reorder(State,-median_IBU),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median IBU")+ggtitle("5 Highest Median IBU by State")+ ylim(0,65)
-
+#Bottom 5 Median IBU plot
 D<-ggplot(Bot5IBU, aes(y=median_IBU, x=reorder(State,-median_IBU),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median IBU")+ggtitle("5 Lowest Median IBU by State")+ ylim(0,65)
-
+#(Side by side bar plots) for the Top and Bottom Median IBU
 grid.arrange(C,D, nrow = 1)
 
 ```
 
 ## State with highest ABV and highest IBU
 ```{r Max-IBU-ABV}
-#Highest ABV
+#Find the Highest ABV and returns the State and the ABV value
 Brewery_Beer %>%  slice(which.max(ABV))%>%select(State,ABV)
-#Highest IBU
+#Find the Highest IBU and returns the State and the IBU value
 Brewery_Beer %>%  slice(which.max(IBU))%>%select(State,IBU)
 ```
 
