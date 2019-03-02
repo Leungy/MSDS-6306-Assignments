@@ -1,12 +1,13 @@
 ---
-title: "Case_Study_1_6306"
-author: "yleung"
+title: "Founders Brewing Co."
+author: "Y.Leung, K.Richardson"
 date: "February 23, 2019"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
 ## R Libraries
@@ -14,10 +15,17 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(stringr)
-library(stringi)
+library(grid)
+library(gridExtra)
 library(GGally)
 ```
+
+##Introduction
+Insert Intro Here
+
+##Background
+Background
+
 
 ## Import Files
 ```{r Read-CSVs}
@@ -30,7 +38,7 @@ breweries<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Dat
 #List the brewery counts per state and convert into data frame
 BreweryPerState<-table(breweries$State)
 BreweryPerState<-data.frame(BreweryPerState)
-BreweryPerState
+print(tbl_df(BreweryPerState),n=51)
 
 #Rename the Header of BreweryPerState
 colnames(BreweryPerState)[1]<-"State"
@@ -50,7 +58,8 @@ colnames(Brewery_Beer)[2]<-"Beer_Name"
 colnames(Brewery_Beer)[8]<-"Brewery_Name"
 
 #Print the first 6 rows of the Brewery_Beer data frame
-head(Brewery_Beer,6)
+Top6<-head(Brewery_Beer,6)
+print(tbl_df(Top6),n=NULL,width = Inf)
 ```
 
 ## Numbers of NA in each column
@@ -60,19 +69,24 @@ NaPerCol<-Brewery_Beer %>%
   select(everything()) %>%  
   summarise_all(funs(sum(is.na(.))))
 
-NaPerCol
+print(tbl_df(NaPerCol),n=NULL,width = Inf)
 
-#Count the number of times non N/A appears in each column
-NonNaPerCol<-Brewery_Beer %>%
-  select(everything()) %>%  
-  summarise_all(funs(sum(!is.na(.))))
-
-NonNaPerCol
+#Get total row counts, this is the same for all columns 
+totalRowCount<-nrow(Brewery_Beer)
 
 #Percentage of time N/A appears in each column
-PercentageNAperCol<-NaPerCol/NonNaPerCol*100
+PercentageNAperCol<-NaPerCol/totalRowCount*100
+#Print the percent of NA per column
+print(tbl_df(PercentageNAperCol),n=NULL,width = Inf)
 
-PercentageNAperCol
+#Summary Table of total NA counts and total Row counts per column
+NaCountTable<-rbind(NaPerCol,totalRowCount)
+#Make the name frame for NaCountTable
+Variables<-c("N/A Counts","Total Counts")
+#Combine Variables and NaCountTable
+NaCountTable<-cbind(Variables,NaCountTable)
+#Print the NaCountTable data frame
+print(tbl_df(NaCountTable),n=NULL,width = Inf)
 ```
 
 ## Median Alcohol Content and IBU per state
@@ -81,6 +95,10 @@ PercentageNAperCol
 medianABV<-Brewery_Beer %>%  group_by(State) %>%  summarize(median_ABV = median(ABV, na.rm = TRUE))
 medianIBU<-Brewery_Beer %>%  group_by(State) %>%  summarize(median_IBU = median(IBU, na.rm = TRUE))
 
+#Remove all NA values from medianABV and medianIBU data frames
+medianABV<-na.omit(medianABV)
+medianIBU<-na.omit(medianIBU)
+
 #Plot median ABV 
 #reorder from highest to lowest
 ggplot(medianABV, aes(y=median_ABV, x=reorder(State,-median_ABV),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median ABV")+ggtitle("Median ABV by State")
@@ -88,6 +106,37 @@ ggplot(medianABV, aes(y=median_ABV, x=reorder(State,-median_ABV),fill=State)) + 
 #Plot median IBU
 #reorder from highest to lowest
 ggplot(medianIBU, aes(y=median_IBU, x=reorder(State,-median_IBU),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median IBU")+ggtitle("Median IBU by State")
+
+#Plot Top and Bottom 5 median ABV 
+#Sort the medianABV by median_ABV
+SortedMedABV<-arrange(medianABV, desc(median_ABV))
+#Find the top 5 from the sortedMedABV df
+Top5ABV<-head(SortedMedABV,5)
+#Find the bottom 5 from the sortedMedABV df
+Bot5ABV<-tail(SortedMedABV,5)
+
+#(Side by side bar plots) for the Top and Bottom Median ABV
+A<-ggplot(Top5ABV, aes(y=median_ABV, x=reorder(State,-median_ABV),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median ABV")+ggtitle("5 Highest Median ABV by State")+ ylim(0,0.07)
+
+B<-ggplot(Bot5ABV, aes(y=median_ABV, x=reorder(State,-median_ABV),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median ABV")+ggtitle("5 Lowest Median ABV by State")+ ylim(0,0.07)
+
+grid.arrange(A, B, nrow = 1)
+
+#Plot Top and Bottom 5 median IBU
+#Sort the medianIBU by median_IBU
+SortedMedIBU<-arrange(medianIBU, desc(median_IBU))
+#Find the top 5 from the sortedMedIBU df
+Top5IBU<-head(SortedMedIBU,5)
+#Find the bottom 5 from the sortedMedIBU df, SD was removed 
+Bot5IBU<-tail(SortedMedIBU,5)
+
+#(Side by side bar plots) for the Top and Bottom Median IBU
+C<-ggplot(Top5IBU, aes(y=median_IBU, x=reorder(State,-median_IBU),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median IBU")+ggtitle("5 Highest Median IBU by State")+ ylim(0,65)
+
+D<-ggplot(Bot5IBU, aes(y=median_IBU, x=reorder(State,-median_IBU),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Median IBU")+ggtitle("5 Lowest Median IBU by State")+ ylim(0,65)
+
+grid.arrange(C,D, nrow = 1)
+
 ```
 
 ## State with highest ABV and highest IBU
@@ -107,12 +156,20 @@ Brewery_Beer %>%select(ABV)%>%summary()
 
 ## IBU versus ABV relationship
 ```{r IBU-vs-ABV}
-#Scatter plot of IBU on x and ABV on y with regression line
-ggplot(Brewery_Beer, aes(x=IBU, y=ABV))+geom_point()+geom_smooth(method="lm")+ggtitle("Scatter Plot, ABV versus IBU")
-
 #Correlation Matrix of IBU vs ABV
 AbvIBU<-Brewery_Beer[,c(4,5)]
 p<-ggcorr(AbvIBU,palette = "RdBu", label = TRUE)
-p+ggtitle('Coefficient of Determination Matrix, R^2')
+p+ggtitle('Correlation Matrix Between ABV and IBU')
+
+#Scatter plot of IBU on x and ABV on y with regression line
+ggplot(Brewery_Beer, aes(x=IBU, y=ABV))+geom_point()+geom_smooth(method="lm")+ggtitle("Scatter Plot, ABV versus IBU")
+
+#linear regression model between ABV and IBU
+lm.ABV<-lm(ABV ~ IBU,Brewery_Beer)
+
+#Summary Statistics of the linear regression model between ABV and IBU
+summary(lm.ABV)
+
+
 ```
 
