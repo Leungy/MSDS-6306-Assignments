@@ -58,6 +58,8 @@ print(tbl_df(BreweryPerState),n=51)
 #Plot Brewery Count Per State
 ggplot(BreweryPerState, aes(y=Brewery_Count, x=reorder(State,-Brewery_Count),fill=State)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab("State")+ylab("Brewery_Count")+ggtitle("Brewery Count(s) By State")
 ```
+
+
 A simple bar plot with the brewery count arranged in a descending order.
 
 ## Breweries Per State Map
@@ -81,6 +83,8 @@ gp2 <- gp1 + scale_y_continuous(breaks=c()) + scale_x_continuous(breaks=c()) + t
 # output generated
 gp2
 ```
+
+
 As seen from the brewery map above, Colorado (47), California (39) and Michigan (32) are the top 3 states with the most breweries. 
 
 
@@ -101,6 +105,8 @@ print(tbl_df(Top6),n=NULL,width = Inf)
 Bot6<-tail(Brewery_Beer,6)
 print(tbl_df(Bot6),n=NULL,width = Inf)
 ```
+
+
 After merging the 2 data sets, print the Top and Bottom 6 rows of data in the merged file to confirm and ensure the merged file correctness.
 
 
@@ -130,6 +136,8 @@ NaCountTable<-cbind(Variables,NaCountTable)
 #Print the NaCountTable data frame as a table
 print(tbl_df(NaCountTable),n=NULL,width = Inf)
 ```
+
+
 The merged data set has 2410 rows of data, and by counting the numbers of missing values in each column, we would see that almost half the IBU values were missing (~42%). There was ~3% of ABV data missing but was not too detrimental in the analysis.
 
 
@@ -182,6 +190,8 @@ D<-ggplot(Bot5IBU, aes(y=median_IBU, x=reorder(State,-median_IBU),fill=State)) +
 grid.arrange(C,D, nrow = 1)
 
 ```
+
+
 After calculating the median values of ABV and IBU, we invoked the na.omit function for each median calculation to ensure that all missing values were completely removed.
 
 The median ABV and median IBU plots were computed and charted by state. We noticed that in the median IBU graph, the top 5 beers with the highest median IBUs came from east coast states (ME,WV,FL,GA and DE). 
@@ -194,6 +204,8 @@ Brewery_Beer %>%  slice(which.max(ABV))%>%select(State,ABV)
 #Find the Highest IBU and returns the State and the IBU value
 Brewery_Beer %>%  slice(which.max(IBU))%>%select(State,IBU)
 ```
+
+
 The state with the higest ABV beer was Colorado and the beer with the highest IBU came from Oregon.
 
 
@@ -203,6 +215,8 @@ The state with the higest ABV beer was Colorado and the beer with the highest IB
 Brewery_Beer %>%select(ABV)%>%summary()
 
 ```
+
+
 The summary statistics of ABV showed that the mean and median were roughly equal (~0.06) with the max ABV at 0.128 and the min ABV at 0.001. The 1st and 3rd quartile of the ABV are 0.050 and 0.067. 
 
 
@@ -227,6 +241,7 @@ summary(lm.ABV)
 
 ```
 
+
 Plotting the ABV vs IBU, we would see that the data was clustered around 10-40 IBU (corresponding to 0.04 to 0.06 ABV).
 To determine the linear relationship, a regression analysis was performed with the following hypothesis.
 Null: Slope is equal to zero. 
@@ -238,3 +253,7 @@ Result: Reject Null given that the p-value is < 2.2e-16 (α=0.05) with the Adjus
 In summary, after exploring the questions of interest, we found that there was not a strong linear relationship between alcohol contect (ABV) and Bitterness (IBU). The missing IBU values were concerning as missing half the data entries would significantly affect any calculations (i.e. median, summary statistics and simple linear regression). 
 
 From the scatter plot as well as the residual plot, we saw that most of the data points were clustered around 10-40 IBU (corresponding to 0.04 to 0.06 ABV). Since the residual plot was not randomly scattered around 0, therefore the variance of the error terms may not be constant and could affect the validity of the proposed linear model.
+
+
+##Youtube Link
+https://youtu.be/RW-_SRXuM0k
