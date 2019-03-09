@@ -1,0 +1,141 @@
+---
+title: "HW9_6306"
+author: "yleung"
+date: "March 9, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Libraries
+```{r libraries, echo=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(GGally)
+library(maps)
+library(openintro)
+library(mosaic)
+library(kableExtra)
+library(stringr)
+library(stringi)
+```
+
+```{r import-data, echo = TRUE}
+Beer<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Unit 9\\Beers.csv', header=TRUE, sep=",")
+
+Brewery<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Unit 9\\Breweries.csv', header=TRUE, sep=",")
+```
+
+##Part A. Clean and prepare the data
+
+```{r merge-dfs, echo=TRUE}
+#Merge Beer & Brewery data frames by the brewery id
+Brewery_Beer<-merge(Beer, Brewery,by.x = "Brewery_id", by.y = "Brew_ID")
+
+#Rename the Header of the Beer Name and Brewery Name after merging
+colnames(Brewery_Beer)[2]<-"Beer_Name"
+colnames(Brewery_Beer)[8]<-"Brewery_Name"
+
+#To get rid of spaces
+Brewery_Beer["State"] <- str_trim(Brewery_Beer$State,"left")
+#Brewery_Beer
+
+#Subsetting CO and TX into beerCOTX df
+beerCOTX<-Brewery_Beer%>%select(everything())%>%filter(State %in% c("CO", "TX"))
+#beerCOTX
+
+#Remove N/A from beerCOTX
+beerCOTX<-beerCOTX%>%select(everything())%>%na.omit(beerCOTX$IBU)
+
+#Order beerCOTX by IBU in ascending order
+beerCOTX<-beerCOTX[order(beerCOTX$IBU),]
+```
+
+##Part B. Plot ABV v. IBU for Colorado and Texas (facet the 2 plots)
+
+```{r facet-CO-TX-ABV-IBU}
+#Plot the ABV vs IBU
+sp <- ggplot(beerCOTX, aes(x=IBU, y=ABV)) + geom_point()
+
+#Divide by states, in the horizontal direction
+sp + facet_grid(. ~ beerCOTX$State)
+```
+
+##Part C. Data Modeling
+
+```{r data-modeling}
+#Fit simple linear regression for each state
+lm.CO.fit <-lm(ABV~IBU,data=subset(beerCOTX,beerCOTX$State=="CO")) 
+lm.CO.fit
+
+
+lm.TX.fit <-lm(ABV~IBU,data=subset(beerCOTX,beerCOTX$State=="TX")) 
+lm.TX.fit
+
+
+#Scatter plot for each state
+#Scatter Plot of Colorado with fit line
+plot(ABV~IBU, data=subset(beerCOTX,beerCOTX$State=="CO"),main="ABV vs IBU Scatter Plot of Colorado with fit line")
+abline(lm.CO.fit, col="red") # regression line (y~x) 
+
+#Scatter Plot of Texas with fit line 
+plot(ABV~IBU, data=subset(beerCOTX,beerCOTX$State=="TX"),main="ABV vs IBU Scatter Plot of Texas with fit line")
+abline(lm.TX.fit, col="red") # regression line (y~x) 
+
+
+#Assumptions
+#Colorado
+beerCOTX %>%select(ABV,State)%>% filter(State=="CO")%>%summary(ABV)
+beerCOTX %>%select(IBU,State)%>% filter(State=="CO")%>%summary(IBU)
+
+beerCOTX %>%select(ABV,State)%>% filter(State=="CO")%>%summary(ABV)
+beerCOTX %>%select(IBU,State)%>% filter(State=="CO")%>%summary(IBU)
+plot(lm.CO.fit,main="Diagnotic Plots for CO linear regression")
+#
+
+#Texas
+beerCOTX %>%select(ABV,State)%>% filter(State=="TX")%>%summary(ABV)
+beerCOTX %>%select(IBU,State)%>% filter(State=="TX")%>%summary(IBU)
+plot(lm.TX.fit,main="Diagnotic Plots for TX linear regression")
+#Normal QQ plot vs Std. Residual mostly follow a straight line but had a curvature
+```
+
+##Part D. Model Inference
+
+```{r model-inference}
+#Simple Linear Regression model summary and confidence intervals for Colorado
+summary(lm.CO.fit)
+confint(lm.CO.fit)
+
+#Simple Linear Regression model summary and confidence intervals for Texas
+summary(lm.TX.fit)
+confint(lm.TX.fit)
+
+
+```
+Question: 
+Is there evidence that the relationship between ABV and IBU is significantly different for Texas and Colorado beers?  
+
+
+
+Model Inference:
+
+
+##Part E. Compare two competing models: External Cross Validation
+
+```{r Ext-CV-Models}
+#square IBU and add this to beerCOTX
+beerCOTX$IBU2<-(beerCOTX$IBU)^2
+#Print top 6 rows beerCOTX
+head(beerCOTX)
+
+#Split each state's into test and train set (60/40) TrainingCO, TestCO, TrainingTX, TestTX
+
+
+
+```
