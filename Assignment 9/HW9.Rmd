@@ -9,8 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Libraries
-```{r libraries, echo=FALSE}
+#### R Libraries
+```{r libraries, message=FALSE}
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -31,7 +31,7 @@ Beer<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Sci
 Brewery<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Unit 9\\Breweries.csv', header=TRUE, sep=",")
 ```
 
-##Part A. Clean and prepare the data
+####Part A. Clean and prepare the data
 
 ```{r merge-dfs, echo=TRUE}
 #Merge Beer & Brewery data frames by the brewery id
@@ -56,9 +56,9 @@ beerCOTX<-beerCOTX%>%select(everything())%>%na.omit(beerCOTX$IBU)
 beerCOTX<-beerCOTX[order(beerCOTX$IBU),]
 ```
 
-##Part B. Plot ABV v. IBU for Colorado and Texas (facet the 2 plots)
+####Part B. Plot ABV v. IBU for Colorado and Texas (facet the 2 plots)
 
-```{r facet-CO-TX-ABV-IBU}
+```{r facet-CO-TX-ABV-IBU, echo = TRUE}
 #Plot the ABV vs IBU
 sp <- ggplot(beerCOTX, aes(x=IBU, y=ABV)) + geom_point()
 
@@ -66,9 +66,9 @@ sp <- ggplot(beerCOTX, aes(x=IBU, y=ABV)) + geom_point()
 sp + facet_grid(. ~ beerCOTX$State)
 ```
 
-##Part C. Data Modeling
+####Part C. Data Modeling
 
-```{r data-modeling}
+```{r data-modeling, echo = TRUE}
 #Fit simple linear regression for each state
 lm.CO.fit <-lm(ABV~IBU,data=subset(beerCOTX,beerCOTX$State=="CO")) 
 lm.CO.fit
@@ -102,12 +102,38 @@ plot(lm.CO.fit,main="Diagnotic Plots for CO linear regression")
 beerCOTX %>%select(ABV,State)%>% filter(State=="TX")%>%summary(ABV)
 beerCOTX %>%select(IBU,State)%>% filter(State=="TX")%>%summary(IBU)
 plot(lm.TX.fit,main="Diagnotic Plots for TX linear regression")
-#Normal QQ plot vs Std. Residual mostly follow a straight line but had a curvature
+
 ```
 
-##Part D. Model Inference
 
-```{r model-inference}
+<b>Data Normality Assumption:</b>
+
+<b>Residual vs Fitted</b>
+
+
+For Colorado,there points were randomly spread out. Same for Texas. 
+
+<b>Standardized Residual vs Normal QQ</b>
+
+
+For Colorado, most points fall in a straight line, there were a few outliers and slight curvature but with the amount of observation, this data set can be considered to be normally distributed.
+For Texas, most points fall in a straight line, there was a curvature towards the upper end of the plot but with the amount of observation, this data set can be considered to be normally distributed
+
+<b>SQRT(|Standardized Residuals|) vs Fitted Value</b>
+
+
+This plot examine the homoscedasticity (equal variance), in both plots, the redlines were relatively flat and we could assume equal variance.
+
+<b>Standardized Residual vs Leverage</b>
+
+
+For Colorado and Texas, most data points, including those that were +/-2 standard deviation away, centered close to 0 and were symmetric. The data sets were from a normally distributed function. The redlines within the plots determined if there were leveraging points. in Colorado, there may be leveraging point(s) since the redline increased but there was no leveraging point(s) in the Texas set since the redline was relatively flat around 0.
+
+
+
+####Part D. Model Inference
+
+```{r model-inference, echo = TRUE}
 #Simple Linear Regression model summary and confidence intervals for Colorado
 summary(lm.CO.fit)
 confint(lm.CO.fit)
@@ -118,24 +144,173 @@ confint(lm.TX.fit)
 
 
 ```
-Question: 
-Is there evidence that the relationship between ABV and IBU is significantly different for Texas and Colorado beers?  
 
 
+<b>Model Inference:</b>
 
-Model Inference:
+For Colorado:
+
+$\widehat{ABV}_{Colordo}$ = 0.0474013 + 0.0003676* IBU
+
+For each point increases in Colorado's IBU, the estimated ABV increases by 0.0477689.
+
+For Texas:
+
+$\widehat{ABV}_{Texas}$ = 0.0434737  + 0.0004172* IBU
+
+For each point increases in Texas's IBU, the estimated ABV increases by 0.0438909.
 
 
-##Part E. Compare two competing models: External Cross Validation
+<b>Question: 
+Is there evidence that the relationship between ABV and IBU is significantly different for Texas and Colorado beers?</b>  
 
-```{r Ext-CV-Models}
+The 95% CI for Colorado and Texas intercepts,$\beta_{0}$, were approximately (0.04,0.05) and the 95%CI of IBU,$\beta_{1}$, for both data sets were (0003,0.0004) for Colorado and (0003,0.0005). There was no significant evidence to believe that the ABV-IBU relationship was different between Texas and Colorado.
+
+
+####Part E. Compare two competing models: External Cross Validation
+
+```{r Ext-CV-Models, echo = TRUE}
 #square IBU and add this to beerCOTX
 beerCOTX$IBU2<-(beerCOTX$IBU)^2
 #Print top 6 rows beerCOTX
 head(beerCOTX)
 
-#Split each state's into test and train set (60/40) TrainingCO, TestCO, TrainingTX, TestTX
+#Split beerCOTX into Colorado and Texas
+Colorado<-beerCOTX%>%select(everything())%>%filter(State=="CO")
+Texas<-beerCOTX%>%select(everything())%>%filter(State=="TX")
 
+#Initialize empty data frames for TrainingCO, TestCO, TrainingTX, TestTX
+TrainingCO = data.frame()
+TestCO = data.frame()
+TrainingTX = data.frame()
+TestTX = data.frame()
 
+#Divide into training and test set ... this one is 60% training 40% test
+train_perc = .6
 
+#Indices for each data set
+train_indices_CO = sample(seq(1,nrow(Colorado),by = 1), train_perc*nrow(Colorado))
+train_indices_TX = sample(seq(1,nrow(Texas),by = 1), train_perc*nrow(Texas))
+
+#Train and Test sets for Colorado
+TrainingCO = Colorado[train_indices_CO,]
+TestCO = Colorado[-train_indices_CO,]
+
+#Train and Test sets for Texas
+TrainingTX = Texas[train_indices_TX,]
+TestTX = Texas[-train_indices_TX,]
+
+#ASE holders for each state, Deg 1 Model
+ASEholderTrainingCO = c()
+ASEholderTestCO = c()
+ASeholderTrainingTX = c()
+ASeholderTestTX = c()
+
+#Fit the Deg 1 Model for Colorado
+TrainingCO.Fit = lm(ABV~IBU, data = TrainingCO)
+#Traning Data Fit Summary
+summary(TrainingCO.Fit)
+
+# Predictions of the model on the Colorado data that were used to fit the model.
+predsTrainingCO = predict(TrainingCO.Fit)
+TrainingCO.Fit$preds = predsTrainingCO
+
+# Predictions of the model on the Colorado data that were NOT used to fit the model.
+predsTestCO = predict(TrainingCO.Fit, newdata = TestCO)
+TestCO$preds = predsTestCO
+
+# Calculation of the ASE for the Colorado training set
+ASEholderTrainingCO = sum((predsTrainingCO - TrainingCO$ABV)^2)/(length(TrainingCO$ABV))
+# Calculation of the ASE for the Colorado Test set
+ASEholderTestCO = sum((predsTestCO - TestCO$ABV)^2)/(length(TestCO$ABV))
+
+ASEholderTrainingCO 
+ASEholderTestCO
+
+#Fit the Deg 1 Model for Texas
+TrainingTX.Fit = lm(ABV~IBU, data = TrainingTX)
+#Traning Data Fit Summary
+summary(TrainingTX.Fit)
+
+# Predictions of the model on the Texas data that were used to fit the model.
+predsTrainingTX = predict(TrainingTX.Fit)
+TrainingTX.Fit$preds = predsTrainingTX
+
+# Predictions of the model on the Texas data that were NOT used to fit the model.
+predsTestTX = predict(TrainingTX.Fit, newdata = TestTX)
+TestTX$preds = predsTestTX
+
+# Calculation of the ASE for the Colorado training set
+ASEholderTrainingTX = sum((predsTrainingTX - TrainingTX$ABV)^2)/(length(TrainingTX$ABV))
+# Calculation of the ASE for the Colorado Test set
+ASEholderTestTX = sum((predsTestTX - TestTX$ABV)^2)/(length(TestTX$ABV))
+
+ASEholderTrainingTX 
+ASEholderTestTX
+
+#ASE holders for each state, Deg 2 Model
+ASEholderTrainingCO2 = c()
+ASEholderTestCO2 = c()
+ASeholderTrainingTX2 = c()
+ASeholderTestTX2 = c()
+
+#Fit the Deg 2 Model Colorado
+TrainingCO.Fit2 = lm(ABV~IBU+IBU2, data = TrainingCO)
+#Traning Data Fit Summary
+summary(TrainingCO.Fit2)
+
+# Predictions of the model on the Colorado data that were used to fit the model.
+predsTrainingCO2 = predict(TrainingCO.Fit2)
+TrainingCO.Fit2$preds = predsTrainingCO2
+
+# Predictions of the model on the Colorado data that were NOT used to fit the model.
+predsTestCO2 = predict(TrainingCO.Fit2, newdata = TestCO)
+
+# Calculation of the ASE for the Colorado training set
+ASEholderTrainingCO2 = sum((predsTrainingCO2 - TrainingCO$ABV)^2)/(length(TrainingCO$ABV))
+# Calculation of the ASE for the Colorado Test set
+ASEholderTestCO2 = sum((predsTestCO2 - TestCO$ABV)^2)/(length(TestCO$ABV))
+
+ASEholderTrainingCO2 
+ASEholderTestCO2
+
+#Fit the Deg 2 Model Texas
+TrainingTX.Fit2 = lm(ABV~IBU+IBU2, data = TrainingTX)
+#Traning Data Fit Summary
+summary(TrainingTX.Fit2)
+
+# Predictions of the model on the Colorado data that were used to fit the model.
+predsTrainingTX2 = predict(TrainingTX.Fit2)
+TrainingTX.Fit2$preds = predsTrainingTX2
+
+# Predictions of the model on the Colorado data that were NOT used to fit the model.
+predsTestTX2 = predict(TrainingTX.Fit2, newdata = TestTX)
+
+# Calculation of the ASE for the Colorado training set
+ASEholderTrainingTX2 = sum((predsTrainingTX2 - TrainingTX$ABV)^2)/(length(TrainingTX$ABV))
+# Calculation of the ASE for the Colorado Test set
+ASEholderTestTX2 = sum((predsTestTX2 - TestTX$ABV)^2)/(length(TestTX$ABV))
+
+ASEholderTrainingTX2 
+ASEholderTestTX2
+
+#Tabulate the ASE statistics for Degree 1 & 2 for each state into Test and Train
+ASE.Scores <- matrix(c(ASEholderTrainingCO,ASEholderTestCO,ASEholderTrainingCO2 ,ASEholderTestCO2,ASEholderTrainingTX,ASEholderTestTX,ASEholderTrainingTX2 ,ASEholderTestTX2),ncol=2,byrow=TRUE)
+colnames(ASE.Scores) <- c("ASE_Train","ASE_Test")
+rownames(ASE.Scores) <- c("CO_Deg1","CO_Deg2","TX_Deg1","TX_Deg2")
+as.table(ASE.Scores)
 ```
+
+
+<b>ASE (averaged squared error) loss function and external cross validation. </b>
+
+<b>Using only the ASE statistic to determine which model (Degree 1 or Degree 2) is more appropriate?</b>
+
+
+For Colorado, since both degree 1 and degree 2's ASE Train and ASE Test statistics were about same, there was no reason not to use the degree 1 model due to the degree 1 model was much simpler.
+
+For Texas, the degree 1 model had a slightly higher ASE in the Train set but a lower ASE statistic in the Test set. Because the objective was to predict the ABV values, therefore a lower ASE statistic in the test would yield a better (accurate) result. For this reason, the Degree 1 model would be preferred. However if the objective was only to fit the existing data, then the Degree 2 model would be preferred as it had a lower ASE statistic in the Train set.
+
+There are other statistics we could use to determine a better model such as AIC and SBC in addition to the ASE. Both impost a penalty for including more explanatory variables where as ASE did not impost penalty.
+
+https://github.com/Leungy/MSDS-6306-Assignments/tree/master/Assignment%209
