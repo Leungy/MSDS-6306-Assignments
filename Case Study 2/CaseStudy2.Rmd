@@ -1,0 +1,89 @@
+---
+title: "CaseStudy2"
+author: "yleung"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Libraries
+```{r libraries,results='hide', message=FALSE, warning=FALSE}
+library(readxl)
+library(tidyverse)
+library(aod)
+library(caret)
+library(corrplot)
+library(DataExplorer)
+library(glmnet)
+library(grid)
+library(gridExtra)
+library(GGally)
+library(maps)
+library(openintro)
+library(mosaic)
+library(kableExtra)
+library(stringr)
+library(stringi)
+```
+
+##Load Data
+```{r load-data}
+CS2.data<- read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Case Study 2\\CaseStudy2-data.csv', header=TRUE, sep=",")
+```
+
+##Exploratory Analysis
+```{r data-eda}
+#Data Structure
+str(CS2.data)
+
+#Recode into factor
+CS2.data$ID<-as.factor(CS2.data$ID) #ID
+CS2.data$Education<-as.factor(CS2.data$Education) #education
+CS2.data$EmployeeCount<-as.factor(CS2.data$EmployeeCount) #employee count
+CS2.data$EnvironmentSatisfaction<-as.factor(CS2.data$EnvironmentSatisfaction)
+CS2.data$JobInvolvement<-as.factor(CS2.data$JobInvolvement)
+CS2.data$JobLevel<-as.factor(CS2.data$JobLevel)
+CS2.data$JobSatisfaction<-as.factor(CS2.data$JobSatisfaction)
+CS2.data$PerformanceRating<-as.factor(CS2.data$PerformanceRating)
+CS2.data$RelationshipSatisfaction<-as.factor(CS2.data$RelationshipSatisfaction)
+CS2.data$StandardHours<-as.factor(CS2.data$StandardHours) #standard hours
+CS2.data$StockOptionLevel<-as.factor(CS2.data$StockOptionLevel)
+CS2.data$WorkLifeBalance<-as.factor(CS2.data$WorkLifeBalance)
+#discounting Rand column? Standardhour column only has 1 value (80), can we drop this or move it into categorical ? Employeecount?
+data<-CS2.data[,c(1:36)]
+#plot data structure
+plot_str(data)
+
+#plot missing values
+plot_missing(data)
+
+#subset continuous
+data.cont<-dplyr::select_if(data, is.numeric)
+#subset categorical factors
+data.cat<-dplyr::select_if(data, is.factor)
+
+#plot continuous variables
+plot_histogram(data.cont)
+plot_qq(data.cont)
+
+#plot factors
+plot_bar(data.cat)
+
+#correlation matrix, continuous vars
+res <- cor(data.cont)
+res <-round(res, 2)
+corrplot(res, type = "upper", order = "hclust", tl.col = "black", tl.srt = 45)
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
