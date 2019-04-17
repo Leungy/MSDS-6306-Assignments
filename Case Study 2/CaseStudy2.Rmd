@@ -12,10 +12,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r libraries,results='hide', message=FALSE, warning=FALSE}
 library(readxl)
 library(tidyverse)
-library(aod)
 library(caret)
 library(corrplot)
-library(DataExplorer)
 library(glmnet)
 library(grid)
 library(gridExtra)
@@ -51,39 +49,306 @@ CS2.data$RelationshipSatisfaction<-as.factor(CS2.data$RelationshipSatisfaction)
 CS2.data$StandardHours<-as.factor(CS2.data$StandardHours) #standard hours
 CS2.data$StockOptionLevel<-as.factor(CS2.data$StockOptionLevel)
 CS2.data$WorkLifeBalance<-as.factor(CS2.data$WorkLifeBalance)
-#discounting Rand column? Standardhour column only has 1 value (80), can we drop this or move it into categorical ? Employeecount?
-data<-CS2.data[,c(1:36)]
-#plot data structure
-plot_str(data)
 
-#plot missing values
-plot_missing(data)
+#drop columns with little to no information to explain attrition
+#drop EmployeeCount (col 10),Over18 (col 23) and StandardHours (col 28), Rand (col 37)
+HRdata<-CS2.data[,c(-10,-23,-28,-37)]
 
-#subset continuous
-data.cont<-dplyr::select_if(data, is.numeric)
-#subset categorical factors
-data.cat<-dplyr::select_if(data, is.factor)
+#filter only those who left (attrition rate) for looking 
+attrition.only<-filter(HRdata, Attrition == "Yes")
+#calculation propotion of attrition equals to Yes
+P1<-CS2.data%>%filter(Attrition=="Yes")%>%count()
+P2<-CS2.data%>%filter(Attrition=="No")%>%count()
+proportion<-P1/(P1+P2)
 
-#plot continuous variables
-plot_histogram(data.cont)
-plot_qq(data.cont)
+#attrition percentage. 
+percent.attrition<-proportion*100 #Approx 16.1% of employees left
 
-#plot factors
-plot_bar(data.cat)
+#Correlation plot
+ggcorr(dplyr::select_if(HRdata, is.numeric),hjust = 0.95, size = 3,label = TRUE, label_size = 3, label_round = 1, label_alpha = TRUE,layout.exp=15,palette = "PuOr")+ ggplot2::labs(title = "Correlation Coefficients of Numeric HR Data Prior Recoding/Transformation")
 
-#correlation matrix, continuous vars
-res <- cor(data.cont)
-res <-round(res, 2)
-corrplot(res, type = "upper", order = "hclust", tl.col = "black", tl.srt = 45)
+#Since MonthlyIncome is continuous and right skew therefore log transform is used. After the transformation, the histogram #plot becomes less skew and the normal qq-plot leans towards a straight line. because of the large sample size, we assume
+#logMonthlyIncome is normally distributed
+#Age is normally distributed with sample size>30 and Age data points fall in a straight line on qq plot. 
+#YearsSinceLastPromotion is discrete numeric variables log transformation would not be feasible
+
+#MonthyIncome
+par(mfrow=c(2,2)) 
+hist(attrition.only$MonthlyIncome)
+qqnorm(attrition.only$MonthlyIncome, pch = 1, frame = FALSE)
+qqline(attrition.only$MonthlyIncome, col = "steelblue", lwd = 2)
+
+logMonthlyIncome<-log10(attrition.only$MonthlyIncome)
+hist(logMonthlyIncome)
+qqnorm(logMonthlyIncome, pch = 1, frame = FALSE)
+qqline(logMonthlyIncome, col = "steelblue", lwd = 2)
+
+#Add a logMonthlyIncome Column
+attrition.only$logMonthlyIncome<-log10(attrition.only$MonthlyIncome)
+HRdata$logMonthlyIncome<-log10(HRdata$MonthlyIncome)
+
+#Age
+par(mfrow=c(2,2)) 
+hist(HRdata$Age)
+qqnorm(HRdata$Age, pch = 1, frame = FALSE)
+qqline(HRdata$Age, col = "steelblue", lwd = 2)
+
+#Recode Attrition into 1 for Yes, 0 for No
+HRdata$AttritionRecode<-ifelse(HRdata$Attrition=="Yes",1,0)
+#Recode Gender into 1 for Male, 2 for Female
+HRdata$GenderRecode<-ifelse(HRdata$Gender=="Male",1,2)
+
+
+#Replotting Correlation plot after setting up the logMonthlyIncome column 
+ggcorr(dplyr::select_if(HRdata, is.numeric),hjust = 0.95, size = 3,label = TRUE, label_size = 3, label_round = 1, label_alpha = TRUE,layout.exp=15,palette = "PuOr")+ ggplot2::labs(title = "Correlation plot of Numeric HR Data with logMonthlyIncome & AttritionRecode ")
+
 ```
 
+##Linear Regression for variable ideas
+```{r linear-reg-VIF}
+#Attempt the problem via linear regression and VIF and see which variables fit the Attrition (recoded into 1&0) and Salary (logMonthlyIncome) to gain insight on which 3 variables appeared in both linear regression models
 
-```{r}
+#subset numeric variables
+numeric.val<-dplyr::select_if(HRdata, is.numeric)
+#glm model logMonthlyIncome~ (fit all numeric vars) 
+glm.fit1a<-glm(logMonthlyIncome~.,data=numeric.val)
 
+#check VIF of the independent variables
+car::vif(glm.fit1a)
+
+#Summary of the glm fit
+summary(glm.fit1a)
+
+#glm model logMonthlyIncome~DistanceFromHome+NumCompaniesWorked+TotalWorkingYears+YearsAtCompany+YearsInCurrentRole+YearsWithCurrManager 
+glm.fit1b<-glm(logMonthlyIncome~DistanceFromHome+NumCompaniesWorked+TotalWorkingYears+YearsAtCompany+YearsInCurrentRole+YearsWithCurrManager,data=numeric.val)
+
+#check VIF of the independent variables
+car::vif(glm.fit1b)
+
+#Summary of the glm fit
+summary(glm.fit1b)
+
+#glm model AttritionRecode~ (fit all vars)
+glm.fit2a<-glm(AttritionRecode~.,data=numeric.val)
+
+#check VIF of the independent variables
+car::vif(glm.fit2a)
+
+#Summary of the glm fit
+summary(glm.fit2a)
+
+#glm model AttritionRecode~Age+DistanceFromHome+NumCompaniesWorked+YearsInCurrentRole+YearsSinceLastPromotion+logMonthlyIncome
+glm.fit2b<-glm(AttritionRecode~Age+DistanceFromHome+NumCompaniesWorked+YearsInCurrentRole+YearsSinceLastPromotion+logMonthlyIncome,data=numeric.val)
+
+#check VIF of the independent variables
+car::vif(glm.fit2b)
+
+#Summary of the glm fit
+summary(glm.fit2b)
 ```
 
+DistanceFromHome, NumCompaniesWorked and YearsInCurrentRole were common factors in both attrition and salary questions.
 
-```{r}
+##Determine Optimal K coefficient, split the data into Train & Test (60/40) and predict attrition outcome using validation data
+```{r knn-attrition}
+#load the attrition data validation set
+Attri.Validate<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Case Study 2\\CaseStudy2Validation No Attrition.csv', header=TRUE, sep=",")
 
+#drop columns with little to no information from the validation set
+#drop EmployeeCount (col 9),Over18 (col 22) and StandardHours (col 27), Rand (col 36)
+Attri.Validate<-Attri.Validate[,c(-9,-22,-27,-36)]
+#add logMonthlyIncome to the cvalidation set
+Attri.Validate$logMonthlyIncome<-log10(Attri.Validate$MonthlyIncome)
+
+#Determine the Optimal K coefficient, https://www.r-bloggers.com/k-nearest-neighbor-step-by-step-tutorial/
+# Setting up 3 separate 10-fold validations 
+set.seed(1234)
+x = trainControl(method ='repeatedcv',number = 10,repeats = 3,classProbs = TRUE,summaryFunction = twoClassSummary)
+model1 <- train(Attrition~DistanceFromHome+YearsInCurrentRole+NumCompaniesWorked , data = HRdata, method = 'knn',preProcess = c('center','scale'),trControl = x,metric ='ROC',tuneLength = 10)
+
+# Summary of model
+model1
+plot(model1)
+
+
+#use the entire HRdata to determine Attrition 
+#Initialize empty data frames 
+TrainSet = data.frame()
+TestSet = data.frame()
+
+#Divide into training and test set ... this one is 60% training 40% test
+train_perc = .6
+
+#index to where the data will be split
+train_indices = sample(seq(1,nrow(HRdata),by = 1), train_perc*nrow(HRdata))
+
+#Train and Test sets for Texas
+TrainSet = HRdata[train_indices,]
+TestSet = HRdata[-train_indices,]
+
+#Summary of each dataframe
+#summary(TrainSet)
+#summary(TestSet)
+
+#Fit KNN regression, predict attrition using 3 variables DistanceFromHome(col=7),YearsInCurrentRole(Col=31), NumCompaniesWorked (Col=21)
+#KNN=3
+knn_11_fit<-knnreg(x=TrainSet[,c(7,21,31)],y=TrainSet$AttritionRecode,k=3)
+pred.knn11<-predict(knn_11_fit,TestSet[,c(7,21,31)])
+knn11<-data.frame(pred.knn11)
+
+#ASE Loss 
+ASEholderTest_KNN11 = c()
+
+# Calculation of the ASE for the KNN3 Test set
+ASEholderTest_KNN11 = sum((knn11 - TestSet$AttritionRecode)^2)/(length(TestSet$AttritionRecode))
+ASEholderTest_KNN11
+
+#Specificity/Sensitivity
+#threshold cutoff >=0.5 to classify as Yes instance (<0.5 as No)
+#classify the knn3 prediction from the test set
+cl_11<-as.factor(ifelse(pred.knn11>=0.5,"Yes","No"))
+
+
+#Confusion Matrix
+#For the knn 11 test 
+confusionMatrix(cl_11, TestSet$Attrition)
+
+#prediction DistanceFromHome(col=6),YearsInCurrentRole(Col=30), NumCompaniesWorked (Col=20)) bsed on KNN=5 model
+Pred.Validate<-predict(knn_11_fit,Attri.Validate[,c(6,20,30)])
+
+#classify the knn5 prediction from the test set
+cl.validate<-as.factor(ifelse(Pred.Validate>=0.5,"Yes","No"))
+
+#write the cl.validate into the validation data set and rename csv for output
 ```
 
+##Determine Optimal K coefficient, split the data into Train & Test (60/40) and predict logMonthlyIncome using validation data
+```{r salary}
+#load the attrition data validation set
+Salary.Validate<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Case Study 2\\CaseStudy2Validation No Salary.csv', header=TRUE, sep=",")
+
+#drop columns with little to no information from the validation set
+#drop EmployeeCount (col 9),Over18 (col 22) and StandardHours (col 27), Rand (col 36)
+Salary.Validate<-Salary.Validate[,c(-10,-22,-27,-36)]
+
+#Linear regression model 
+#glm(logMonthlyIncome~DistanceFromHome+NumCompaniesWorked+TotalWorkingYears+YearsAtCompany+YearsInCurrentRole+YearsWithCurrManager)
+glm.fit1b
+
+#Diagnostic Plots to check assumptions
+par(mfrow=c(2,2), col.main="black", col.lab="blue")
+plot(glm.fit1b)
+
+#check VIF of the independent variables
+car::vif(glm.fit1b)
+
+#Summary of the glm fit
+summary(glm.fit1b)
+
+
+#use the entire HRdata to determine fit the logMonthlyIncome 
+#Initialize empty data frames 
+SalaryTrainSet = data.frame()
+SalaryTestSet = data.frame()
+
+#Divide into training and test set ... this one is 60% training 40% test
+train_perc = .6
+
+#index to where the data will be split
+train_indices = sample(seq(1,nrow(HRdata),by = 1), train_perc*nrow(HRdata))
+
+#Train and Test sets for Texas
+SalaryTrainSet = HRdata[train_indices,]
+SalaryTestSet = HRdata[-train_indices,]
+
+#RMSE holders
+RMSEholderTrain=c()
+RMSEholderTest=c()
+
+#Model fitting using the train set
+SalaryTrain.Fit=glm(logMonthlyIncome~DistanceFromHome+NumCompaniesWorked+TotalWorkingYears+YearsAtCompany+YearsInCurrentRole+YearsWithCurrManager,data=SalaryTrainSet)
+
+#summary of the train fit
+summary(SalaryTrain.Fit)
+
+#Prediction using the SalaryTrainSet
+pred.SalaryTrain=predict(SalaryTrain.Fit)
+SalaryTrain.Fit$preds=pred.SalaryTrain
+
+#Predcition using the SalaryTestSet
+pred.SalaryTest=predict(SalaryTrain.Fit, newdata = SalaryTestSet)
+
+#RMSE of the Train and Test predictions 
+RMSEholderTrain=sqrt(mean((pred.SalaryTrain-SalaryTrainSet$logMonthlyIncome)^2))
+RMSEholderTest=sqrt(mean((pred.SalaryTest-SalaryTestSet$logMonthlyIncome)^2))
+
+#Validate the model using the salary validate set
+#predict the logMonthlyIncome 
+pred.SalaryValidate=predict(SalaryTrain.Fit, newdata = Salary.Validate)
+
+#Exponentiate the results to transform back into Predicted MonthlyIncome
+Predicted.MonthlyIncome=data.frame(exp(pred.SalaryValidate))
+
+#write the cl.validate into the validation data set and rename csv for output
+```
+
+<b>Data Normality Assumption:</b>
+
+<i>Residual vs Fitted</i>
+Plotted points were randomly spread out.
+
+<i>Standardized Residual vs Normal QQ</i>
+
+Data assumed to be coming from a normally distributed function since the plotted points fell into a straight line
+
+<i>SQRT(|Standardized Residuals|) vs Fitted Value</i>
+
+This plot examine the homoscedasticity (equal variance), in this plot the redline was relatively flat and we could assume equal variance.
+
+<i>Standardized Residual vs Leverage</i>
+
+Most data points, including those that were +/-2 standard deviation away, centered close to 0 and were symmetric. The data set came from a normally distributed function. The redline within the plot determined if there were leveraging points. Observation 485 would be a leveraging point however (1 out of 870 obervations)this should not affect the regression model.
+
+
+##Job Roles versus Various Satisfaction Metrics
+```{r Ratings-JobRole}
+#Staisfaction Ratings versus Job Roles within the the attirtion set (emplyees who left the company)
+#average satisfaction ratings per jobe role
+
+#verticle x axis label
+q<- theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#Job Staisfaction versus Job Roles
+#plot average Job Satisfaction versus role
+ggplot(attrition.only, aes(JobRole, JobSatisfaction,fill=JobSatisfaction)) + geom_bar(stat = "identity", position = "dodge")+q+labs(title="Mean Job Satisfaction versus Job Roles")+ stat_summary(fun.y="mean", geom="bar")
+
+#In terms of job satisfaction, HR, Manf Director and Research Director have a mean rating of 3.
+
+#Relationship Satisfaction versus Job Roles
+ggplot(attrition.only, aes(JobRole, RelationshipSatisfaction,fill=RelationshipSatisfaction)) + geom_bar(stat = "identity", position = "dodge")+q+labs(title="Mean Relationship Satisfaction versus Job Roles")+ stat_summary(fun.y="mean", geom="bar")
+
+#Mean Relationship Satisfaction ratings are equal amongst all job roles.
+
+#Environment Satisfaction versus Job Roles
+ggplot(attrition.only, aes(JobRole, EnvironmentSatisfaction,fill=EnvironmentSatisfaction)) + geom_bar(stat = "identity", position = "dodge")+q+labs(title="Mean Environment Satisfaction versus Job Roles")+ stat_summary(fun.y="mean", geom="bar")
+
+#In terms of environment satisfaction, Research Director has the lowest rating (2) followed by Manf. Director (3)
+
+#Work Life Balance versus Job Roles
+ggplot(attrition.only, aes(JobRole, WorkLifeBalance,fill=WorkLifeBalance)) + geom_bar(stat = "identity", position = "dodge")+q+labs(title="Mean Work Life Balance versus Job Roles")+ stat_summary(fun.y="mean", geom="bar")
+
+#Stock Option Level versus Job Roles
+ggplot(attrition.only, aes(JobRole, StockOptionLevel,fill=StockOptionLevel)) + geom_bar(stat = "identity", position = "dodge")+q+labs(title="Mean Stock Option Level versus Job Roles")+ stat_summary(fun.y="mean", geom="bar")
+
+#Research Director and Manf Director  have 0 stock option level followed by manager's stock option level of 1.
+
+#Job Involvement versus Job Roles
+ggplot(attrition.only, aes(JobRole, JobInvolvement,fill=JobInvolvement)) + geom_bar(stat = "identity", position = "dodge")+q+labs(title="Mean Job Involovement versus Job Roles")+ stat_summary(fun.y="mean", geom="bar")
+
+#On average, Manf. Director has the lowest job involvement rating.
+
+#Gender difference
+ggplot(attrition.only, aes(x=Gender)) + geom_bar(aes(y = (..count..)/sum(..count..),fill = Gender), position = "dodge")+q+labs(title="Percentage left the company by gender")+ylab("Percentage Left Company")+scale_y_continuous(labels = scales::percent)
+
+#Of those who left the company, there was a much higher attrition percentage for men than women. (>20%)
+```
