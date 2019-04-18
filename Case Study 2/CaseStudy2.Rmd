@@ -30,7 +30,7 @@ library(PerformanceAnalytics)
 CS2.data<- read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Case Study 2\\CaseStudy2-data.csv', header=TRUE, sep=",")
 ```
 
-##Exploratory Analysis
+####Exploratory Analysis
 ```{r data-eda}
 #Data Structure
 str(CS2.data)
@@ -218,8 +218,12 @@ Pred.Validate<-predict(knn_11_fit,Attri.Validate[,c(6,20,30)])
 
 #classify the knn5 prediction from the test set
 cl.validate<-data.frame(as.factor(ifelse(Pred.Validate>=0.5,"Yes","No")))
-cl.validate
+names(cl.validate) <- c("PredictedAttrition")
 #write the cl.validate into the validation data set and rename csv for output
+df<-data.frame(Attri.Validate$ID)
+df<-cbind(df,cl.validate)
+names(df) <- c("ID","Attrition")
+write.csv(df, file = "C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Case Study 2\\Case2PredictionsLeung Attrition.csv",row.names=FALSE)
 ```
 
 ####GLM regression,Split the data into Train & Test (60/40) and predict logMonthlyIncome using validation data
@@ -309,8 +313,13 @@ pred.SalaryValidate=predict(SalaryTrain.Fit, newdata = Salary.Validate)
 
 #Back transformation into Predicted MonthlyIncome
 Predicted.MonthlyIncome=data.frame(10^(pred.SalaryValidate))
-Predicted.MonthlyIncome
+names(Predicted.MonthlyIncome) <- c("PredictedMonthlyIncome")
 #CSV output Predicted.MonthlyIncome
+df2<-data.frame(Salary.Validate$ID)
+names(df2)<-c("ID")
+df2<-cbind(df2,Predicted.MonthlyIncome)
+names(df2) <- c("ID","MonthlyIncome")
+write.csv(df2, file = "C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Case Study 2\\Case2PredictionsLeung Salary.csv",row.names=FALSE)
 ```
 
 
