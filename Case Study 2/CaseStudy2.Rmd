@@ -8,7 +8,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Libraries
+#### R Libraries
 ```{r libraries,results='hide', message=FALSE, warning=FALSE}
 library(readxl)
 library(tidyverse)
@@ -22,11 +22,10 @@ library(maps)
 library(openintro)
 library(mosaic)
 library(kableExtra)
-library(stringr)
-library(stringi)
+library(PerformanceAnalytics)
 ```
 
-##Load Data
+####Load Data
 ```{r load-data}
 CS2.data<- read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Case Study 2\\CaseStudy2-data.csv', header=TRUE, sep=",")
 ```
@@ -64,8 +63,10 @@ proportion<-P1/(P1+P2)
 #attrition percentage. 
 percent.attrition<-proportion*100 #Approx 16.1% of employees left
 
-#Correlation plot
-ggcorr(dplyr::select_if(HRdata, is.numeric),hjust = 0.95, size = 3,label = TRUE, label_size = 3, label_round = 1, label_alpha = TRUE,layout.exp=15,palette = "PuOr")+ ggplot2::labs(title = "Correlation Coefficients of Numeric HR Data Prior Recoding/Transformation")
+#Histograms & Correlation plot
+#subset the numeric data from HRdata
+a<-dplyr::select_if(HRdata, is.numeric)
+ggpairs(a[,c(-2,-5,-7)],progress = FALSE)
 
 #Since MonthlyIncome is continuous and right skew therefore log transform is used. After the transformation, the histogram #plot becomes less skew and the normal qq-plot leans towards a straight line. because of the large sample size, we assume
 #logMonthlyIncome is normally distributed
@@ -100,11 +101,14 @@ HRdata$GenderRecode<-ifelse(HRdata$Gender=="Male",1,2)
 
 
 #Replotting Correlation plot after setting up the logMonthlyIncome column 
-ggcorr(dplyr::select_if(HRdata, is.numeric),hjust = 0.95, size = 3,label = TRUE, label_size = 3, label_round = 1, label_alpha = TRUE,layout.exp=15,palette = "PuOr")+ ggplot2::labs(title = "Correlation plot of Numeric HR Data with logMonthlyIncome & AttritionRecode ")
+#subset numeric data
+b<-dplyr::select_if(HRdata, is.numeric)
+ggpairs(b[,c(-2,-5,-7)],progress = FALSE)
+
 
 ```
 
-##Linear Regression for variable ideas
+####Linear Regression models
 ```{r linear-reg-VIF}
 #Attempt the problem via linear regression and VIF and see which variables fit the Attrition (recoded into 1&0) and Salary (logMonthlyIncome) to gain insight on which 3 variables appeared in both linear regression models
 
@@ -147,9 +151,9 @@ car::vif(glm.fit2b)
 summary(glm.fit2b)
 ```
 
-DistanceFromHome, NumCompaniesWorked and YearsInCurrentRole were common factors in both attrition and salary questions.
+<B><i>DistanceFromHome, NumCompaniesWorked and YearsInCurrentRole were common factors in both attrition and salary questions.</i></B>
 
-##Determine Optimal K coefficient, split the data into Train & Test (60/40) and predict attrition outcome using validation data
+####Determine Optimal K coefficient, split the data into Train & Test (60/40) and predict attrition outcome using validation data
 ```{r knn-attrition}
 #load the attrition data validation set
 Attri.Validate<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Case Study 2\\CaseStudy2Validation No Attrition.csv', header=TRUE, sep=",")
@@ -186,10 +190,6 @@ train_indices = sample(seq(1,nrow(HRdata),by = 1), train_perc*nrow(HRdata))
 TrainSet = HRdata[train_indices,]
 TestSet = HRdata[-train_indices,]
 
-#Summary of each dataframe
-#summary(TrainSet)
-#summary(TestSet)
-
 #Fit KNN regression, predict attrition using 3 variables DistanceFromHome(col=7),YearsInCurrentRole(Col=31), NumCompaniesWorked (Col=21)
 #KNN=3
 knn_11_fit<-knnreg(x=TrainSet[,c(7,21,31)],y=TrainSet$AttritionRecode,k=3)
@@ -217,31 +217,50 @@ confusionMatrix(cl_11, TestSet$Attrition)
 Pred.Validate<-predict(knn_11_fit,Attri.Validate[,c(6,20,30)])
 
 #classify the knn5 prediction from the test set
-cl.validate<-as.factor(ifelse(Pred.Validate>=0.5,"Yes","No"))
-
+cl.validate<-data.frame(as.factor(ifelse(Pred.Validate>=0.5,"Yes","No")))
+cl.validate
 #write the cl.validate into the validation data set and rename csv for output
 ```
 
-##Determine Optimal K coefficient, split the data into Train & Test (60/40) and predict logMonthlyIncome using validation data
+####GLM regression,Split the data into Train & Test (60/40) and predict logMonthlyIncome using validation data
 ```{r salary}
-#load the attrition data validation set
+#load the salary validation set
 Salary.Validate<-read.csv(file = 'C:\\Users\\Yat\\Documents\\MSDS\\MSDS 6306 Doing Data Science\\Case Study 2\\CaseStudy2Validation No Salary.csv', header=TRUE, sep=",")
 
 #drop columns with little to no information from the validation set
 #drop EmployeeCount (col 9),Over18 (col 22) and StandardHours (col 27), Rand (col 36)
 Salary.Validate<-Salary.Validate[,c(-10,-22,-27,-36)]
 
-#Linear regression model 
-#glm(logMonthlyIncome~DistanceFromHome+NumCompaniesWorked+TotalWorkingYears+YearsAtCompany+YearsInCurrentRole+YearsWithCurrManager)
-glm.fit1b
+#Use the glm.fit1b model since the glm.fit1a has some variables with high (>5) VIF values
+#glm model logMonthlyIncome~DistanceFromHome+NumCompaniesWorked+TotalWorkingYears+YearsAtCompany+YearsInCurrentRole+YearsWithCurrManager 
+glm.fit1b<-glm(logMonthlyIncome~DistanceFromHome+NumCompaniesWorked+TotalWorkingYears+YearsAtCompany+YearsInCurrentRole+YearsWithCurrManager,data=numeric.val)
 
 #Diagnostic Plots to check assumptions
 par(mfrow=c(2,2), col.main="black", col.lab="blue")
 plot(glm.fit1b)
 
+# <b>Data Normality Assumption:</b>
+# 
+# <i>Residual vs Fitted</i>
+# Plotted points were randomly spread out.
+# 
+# <i>Standardized Residual vs Normal QQ</i>
+# 
+# Data assumed to be coming from a normally distributed function since the plotted points fell into a straight line
+# 
+# <i>SQRT(|Standardized Residuals|) vs Fitted Value</i>
+# 
+# This plot examine the homoscedasticity (equal variance), in this plot the redline was relatively flat and we could assume equal variance.
+# 
+# <i>Standardized Residual vs Leverage</i>
+# 
+# Most data points, including those that were +/-2 standard deviation away, centered close to 0 and were symmetric. The data set came from a normally distributed function. The redline within the plot determined if there were leveraging points. Observation 485 would be a leveraging point however (1 out of 870 obervations)this should not affect the regression model.
+
+
+
+#GLM VIF and Summary recap
 #check VIF of the independent variables
 car::vif(glm.fit1b)
-
 #Summary of the glm fit
 summary(glm.fit1b)
 
@@ -280,34 +299,19 @@ pred.SalaryTest=predict(SalaryTrain.Fit, newdata = SalaryTestSet)
 
 #RMSE of the Train and Test predictions 
 RMSEholderTrain=sqrt(mean((pred.SalaryTrain-SalaryTrainSet$logMonthlyIncome)^2))
+RMSEholderTrain
 RMSEholderTest=sqrt(mean((pred.SalaryTest-SalaryTestSet$logMonthlyIncome)^2))
+RMSEholderTest
 
 #Validate the model using the salary validate set
 #predict the logMonthlyIncome 
 pred.SalaryValidate=predict(SalaryTrain.Fit, newdata = Salary.Validate)
 
-#Exponentiate the results to transform back into Predicted MonthlyIncome
-Predicted.MonthlyIncome=data.frame(exp(pred.SalaryValidate))
-
-#write the cl.validate into the validation data set and rename csv for output
+#Back transformation into Predicted MonthlyIncome
+Predicted.MonthlyIncome=data.frame(10^(pred.SalaryValidate))
+Predicted.MonthlyIncome
+#CSV output Predicted.MonthlyIncome
 ```
-
-<b>Data Normality Assumption:</b>
-
-<i>Residual vs Fitted</i>
-Plotted points were randomly spread out.
-
-<i>Standardized Residual vs Normal QQ</i>
-
-Data assumed to be coming from a normally distributed function since the plotted points fell into a straight line
-
-<i>SQRT(|Standardized Residuals|) vs Fitted Value</i>
-
-This plot examine the homoscedasticity (equal variance), in this plot the redline was relatively flat and we could assume equal variance.
-
-<i>Standardized Residual vs Leverage</i>
-
-Most data points, including those that were +/-2 standard deviation away, centered close to 0 and were symmetric. The data set came from a normally distributed function. The redline within the plot determined if there were leveraging points. Observation 485 would be a leveraging point however (1 out of 870 obervations)this should not affect the regression model.
 
 
 ##Job Roles versus Various Satisfaction Metrics
