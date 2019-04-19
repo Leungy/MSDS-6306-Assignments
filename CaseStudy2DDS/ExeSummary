@@ -1,1 +1,35 @@
+Executive Summary
 
+Project Purpose
+The purpose of the project is to identify the top three reasons attributed to workplace attrition.
+
+Client Profile
+The client, Medicago Inc (Subsidiary of Mitsubishi Tanabe Pharma Corp or MTPC), is a late clinical/research staged pandemic flu vaccine producer in North America region.
+
+There was a high percentage of employee turnover within the company in recent year. Client requested to help identify the causes through simple comparison metrics in addition to the use of machine learning algorithms.
+
+  1. KNN regression & classification is used to perfrom Attrition Analysis 
+
+  2. GLM (general linear model) is used to analyze Salary information.
+
+  3. Graphical comparisons (barplots) are used to compare different average satisfaction ratings to job roles.
+
+Goals:
+Our analysis identify the three causes of the client's turnover
+
+    · Distance from work
+    · Numbers of companies worked
+    · Years with the current manager
+
+Since the KNN and linear models looked at the data set as a whole without considered the balance within the attrition responses proportion, therefore we could only assume the reasons for leaving within the provided data but cannot use to make other assumptions. Furthermore, the data set was an observation and no causal effect can be claimed.
+
+
+
+
+
+
+
+
+
+
+Link to youtube presentation: https://youtu.be/jPNtvn40ZFk
