@@ -1,1 +1,21 @@
+Case Study 2 - MSDS 6306 Spring 2019 SMU
 
+Case study 2 examined a set of human resource data, both categorical (multiple levels, binary) and numeric (discrete, continuous).The question of interest was to determine 3 major factors contribute towards workplace attrition through the use of either KNN or naive bayes (abbrev. NB from this point forward).
+
+The potential audience (or client) of the study was directed towards a Fortune 100 company management and to explain the reasons of attirtion and to increase the hiring and retention competitiveness within the business sector. Aside from learning workplace attrition through KNN or NB, the client was also interested in understanding the relationship between salary (in terms of monthly income) and the factors assocaited with attrition in addition to any existing trends in job roles.
+
+The data set consisted of 870 observations and 37 columns, of which there were columns with little to no information such as ID, Rand and Over18 etc and were dropped. Upon initial data exploration, variable such as MonthlyIncome was found to be right skewed and therefore a log 10 transformation was employed to tranform the data into more normal like. 
+
+The pair plots showed the before and after transformation data set and the rough data distribution through the diagonal histograms and the density curves. The lower portion showed the correlation coefficients between the paried variables. MonthlyIncome and the logged MonthlyIncome had a almost perfect correlation coefficient since these two explained each other perfectly and were collinear.
+
+Separate general linear regression models were ran to examine the quantitative variables when the response was either salary or attrition(transformed from Yes/No into 1/0). In each model, a variance inflation factor was analyzed to determine the variables to keep and finally compared to the other model to identify the common variables. The common variables were then used to setup the Attrition KNN and the Salary GLM regression models.
+
+In the Attrition KNN regression and classification section, a separate model was used with all available data to determine the optimal K-nearest coefficient to be used in KNN regression. The data was the divided into a test(40%) and train(60%) portions where we would test the model to calculate the Sensitivity & Specificity in the Attrition KNN model and a RMSE for the Salary Model.
+
+The log transformed MonthlyIncome variable was used throughout the salary learning and predicting portion. The model was then validated using a validate set and the final result was then back transformed into the MonthlyIncome after all predictions on the validate set were raised to the 10th power.
+
+
+
+
+
+Note: The KNN model did not attain the 60% Sensitivity & 60% Specificity since I was not able to understand how to setup a unbalanced model.
